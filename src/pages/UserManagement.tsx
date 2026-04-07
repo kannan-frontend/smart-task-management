@@ -3,24 +3,28 @@ import { useUsers } from "../hooks/useUsers";
 import { useAuth } from "../hooks/useAuth";
 import { useTasks } from "../hooks/useTasks";
 import toast from "react-hot-toast";
-import { Users, ShieldCheck, User, Trash2, ChevronDown, Search, ShieldOff, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Users, ShieldCheck, User, Trash2, ChevronDown,
+  Search, ShieldOff, ChevronLeft, ChevronRight,
+} from "lucide-react";
 import type { UserData } from "../types/auth";
+import { ConfirmModal } from "./ConfirmModal";
 
 const PAGE_SIZE = 8;
 
-interface RoleConfirm { uid: string; name: string; newRole: "admin" | "user" }
+interface RoleConfirm { uid: string; name: string; currentRole: "admin" | "user"; newRole: "admin" | "user" }
 
 export default function UserManagement() {
-  const { userData } = useAuth();
+  const { userData }                              = useAuth();
   const { users, loading, updateRole, deleteUser } = useUsers();
-  const { tasks } = useTasks(userData);
+  const { tasks }                                 = useTasks(userData);
 
-  const [search,         setSearch]         = useState("");
-  const [confirmDelete,  setConfirmDelete]  = useState<string | null>(null);
-  const [roleConfirm,    setRoleConfirm]    = useState<RoleConfirm | null>(null);
-  const [page,           setPage]           = useState(1);
+  const [search,        setSearch]        = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [roleConfirm,   setRoleConfirm]   = useState<RoleConfirm | null>(null);
+  const [page,          setPage]          = useState(1);
 
-  // ── guard: non-admins see a proper empty state ──────────────────────────────
+  // Non-admin guard
   if (!userData || userData.role !== "admin") {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -28,35 +32,39 @@ export default function UserManagement() {
           <ShieldOff size={28} className="text-gray-400" />
         </div>
         <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">Access Restricted</h2>
-        <p className="text-sm text-gray-400 max-w-xs">This section is only available to administrators. Contact your admin if you need access.</p>
+        <p className="text-sm text-gray-400 max-w-xs">This section is only available to administrators.</p>
       </div>
     );
   }
 
-  // ── derived ─────────────────────────────────────────────────────────────────
-  const filtered = users.filter(
-    (u) => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
+  // Derived counts
+  // Members = users whose role is "user" (stored as "user" in Firestore, displayed as "Member" in UI)
+  const adminCount  = users.filter((u) => u.role === "admin").length;
+  const memberCount = users.filter((u) => u.role === "user").length;
+
+  const filtered    = users.filter(
+    (u) => u.name.toLowerCase().includes(search.toLowerCase()) ||
+           u.email.toLowerCase().includes(search.toLowerCase())
   );
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage    = Math.min(page, totalPages);
   const paginated   = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const adminCount  = users.filter((u) => u.role === "admin").length;
-  const memberCount = users.filter((u) => u.role === "user").length;
-
   const getTaskCount = (email: string) => tasks.filter((t) => t.assignedTo === email).length;
 
-  // ── handlers ─────────────────────────────────────────────────────────────────
+  // Handlers
   const handleRoleChangeRequest = (u: UserData, newRole: "admin" | "user") => {
     if (u.role === newRole) return;
-    setRoleConfirm({ uid: u.uid, name: u.name, newRole });
+    setRoleConfirm({ uid: u.uid, name: u.name, currentRole: u.role, newRole });
   };
 
   const confirmRoleChange = async () => {
     if (!roleConfirm) return;
     try {
       await updateRole(roleConfirm.uid, roleConfirm.newRole);
-      toast.success(`${roleConfirm.name} is now ${roleConfirm.newRole === "admin" ? "an Admin" : "a Member"}`);
+      toast.success(
+        `${roleConfirm.name} is now ${roleConfirm.newRole === "admin" ? "an Admin" : "a Member"}`
+      );
     } catch {
       toast.error("Failed to update role");
     } finally {
@@ -74,22 +82,27 @@ export default function UserManagement() {
     }
   };
 
-  // ── render ───────────────────────────────────────────────────────────────────
   return (
     <>
       <div className="space-y-6">
-        {/* Header */}
+        {/* Page Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">User Management</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage team members and their roles.</p>
         </div>
 
-        {/* Stats */}
+        {/* Stats
+            ─────────────────────────────────────────────────────────────
+            Members count = users where role === "user" (Firestore value).
+            The role is stored as "user" in Firestore and shown as "Member"
+            in the UI for clarity. So if you have 3 users with role "user"
+            the Members card shows 3.
+            ───────────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: "Total Users", value: users.length, icon: Users,       color: "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" },
-            { label: "Admins",      value: adminCount,   icon: ShieldCheck,  color: "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400" },
-            { label: "Members",     value: memberCount,  icon: User,         color: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" },
+            { label: "Total Users", value: users.length, icon: Users,      color: "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" },
+            { label: "Admins",      value: adminCount,   icon: ShieldCheck, color: "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400" },
+            { label: "Members",     value: memberCount,  icon: User,        color: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" },
           ].map((s) => (
             <div key={s.label} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.color}`}>
@@ -106,9 +119,12 @@ export default function UserManagement() {
         {/* Search */}
         <div className="relative">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by name or email..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
         </div>
 
         {/* Table */}
@@ -143,7 +159,7 @@ export default function UserManagement() {
               <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
                 {paginated.map((u) => (
                   <div key={u.uid} className="grid grid-cols-12 px-5 py-3.5 items-center hover:bg-gray-50 dark:hover:bg-gray-700/20 transition">
-                    {/* User */}
+                    {/* User info */}
                     <div className="col-span-5 flex items-center gap-3 min-w-0">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold ${
                         u.role === "admin"
@@ -163,7 +179,7 @@ export default function UserManagement() {
                       </div>
                     </div>
 
-                    {/* Task count */}
+                    {/* Task count badge */}
                     <div className="col-span-2 text-center">
                       <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
                         getTaskCount(u.email) > 0
@@ -174,11 +190,15 @@ export default function UserManagement() {
                       </span>
                     </div>
 
-                    {/* Role */}
+                    {/* Role selector
+                        FIX: The select value stays at u.role (current DB value).
+                        When admin changes it, we capture the intent in roleConfirm
+                        and only update DB after confirmation. The select reverts
+                        visually because u.role hasn't changed yet — this is correct. */}
                     <div className="col-span-3 flex justify-center">
                       {u.uid === userData.uid ? (
-                        <span className="text-xs px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full font-semibold">
-                          {u.role}
+                        <span className="text-xs px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full font-semibold capitalize">
+                          {u.role === "user" ? "Member" : "Admin"}
                         </span>
                       ) : (
                         <div className="relative">
@@ -207,7 +227,7 @@ export default function UserManagement() {
                           </div>
                         ) : (
                           <button onClick={() => setConfirmDelete(u.uid)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition" title="Remove user">
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
                             <Trash2 size={14} />
                           </button>
                         )
@@ -246,37 +266,18 @@ export default function UserManagement() {
         )}
       </div>
 
-      {/* Role Change Confirmation Modal */}
-      {roleConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setRoleConfirm(null)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm z-10 p-6 animate-in">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck size={22} className="text-amber-500" />
-            </div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white text-center mb-1">Change Role?</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-5">
-              Change <span className="font-semibold text-gray-700 dark:text-gray-200">{roleConfirm.name}</span>'s role to{" "}
-              <span className={`font-semibold ${roleConfirm.newRole==="admin"?"text-purple-600":"text-indigo-600"}`}>
-                {roleConfirm.newRole === "admin" ? "Admin" : "Member"}
-              </span>?
-              {roleConfirm.newRole === "admin" && (
-                <span className="block mt-1 text-xs text-amber-500">⚠ Admins can manage tasks and users.</span>
-              )}
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setRoleConfirm(null)}
-                className="flex-1 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-xl transition">
-                Cancel
-              </button>
-              <button onClick={confirmRoleChange}
-                className="flex-1 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition">
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Role Change Confirmation — uses reusable ConfirmModal */}
+      <ConfirmModal
+        isOpen={!!roleConfirm}
+        title="Change User Role?"
+        message={roleConfirm
+          ? `Change ${roleConfirm.name}'s role from ${roleConfirm.currentRole === "user" ? "Member" : "Admin"} to ${roleConfirm.newRole === "admin" ? "Admin" : "Member"}?${roleConfirm.newRole === "admin" ? "\n\n⚠ Admins can manage all tasks and users." : ""}`
+          : ""}
+        confirmLabel="Yes, Change Role"
+        confirmClass="bg-indigo-600 hover:bg-indigo-700 text-white"
+        onCancel={() => setRoleConfirm(null)}
+        onConfirm={confirmRoleChange}
+      />
     </>
   );
 }

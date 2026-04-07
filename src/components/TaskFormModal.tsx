@@ -85,7 +85,7 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit, adminUser, ed
 
   const { register, handleSubmit, setValue, watch, reset, control, formState: { errors, isSubmitting } } =
     useForm<TaskFormValues>({
-      resolver: yupResolver(taskSchema),
+      resolver: yupResolver(taskSchema) as any,
       defaultValues: { title: "", description: "", assignedTo: "", priority: "medium" },
     });
 

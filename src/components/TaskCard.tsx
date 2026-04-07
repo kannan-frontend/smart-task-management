@@ -6,7 +6,10 @@ import TaskFormModal from "./TaskFormModal";
 import UserTaskModal from "./UserTaskModal";
 
 interface TaskCardProps {
-  task: Task; role: Role; adminUser?: UserData; users?: UserData[];
+  task:     Task;
+  role:     Role;
+  adminUser?: UserData;
+  users?:   UserData[];
   onUpdate: (id: string, data: Partial<Task>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
@@ -29,7 +32,6 @@ const STATUS_LABEL: Record<Task["status"], string> = {
   todo: "To Do", "in-progress": "In Progress", completed: "⏳ Pending Review", done: "✅ Done",
 };
 
-// Strip HTML tags for plain-text preview on card
 const plainText = (html: string) =>
   html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 
@@ -42,9 +44,9 @@ export default function TaskCard({ task, role, adminUser, users = [], onUpdate, 
   const assignedByUser = users.find((u) => u.email === task.assignedBy);
   const descPreview    = task.description?.includes("<") ? plainText(task.description) : task.description;
 
-  const normalizedRole = role?.toLowerCase() || "user";
-  const isAdmin = normalizedRole === "admin";
-  const isUser = normalizedRole === "user";
+const normalizedRole = role?.toLowerCase() || "user";
+const isAdmin = normalizedRole === "admin";
+const isUser = normalizedRole === "user";
 
   return (
     <>
@@ -52,7 +54,7 @@ export default function TaskCard({ task, role, adminUser, users = [], onUpdate, 
         <div className={`h-1 w-full ${PRIORITY_BAR[task.priority]}`} />
 
         <div className="p-5 flex flex-col gap-3 flex-1">
-          {/* Title + priority */}
+          {/* Title + Priority */}
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-gray-800 dark:text-white text-sm leading-snug flex-1">{task.title}</h3>
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide border flex-shrink-0 ${PRIORITY_BADGE[task.priority]}`}>
@@ -60,10 +62,10 @@ export default function TaskCard({ task, role, adminUser, users = [], onUpdate, 
             </span>
           </div>
 
-          {/* Description preview (plain text) */}
+          {/* Description preview */}
           <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">{descPreview}</p>
 
-          {/* Status badge */}
+          {/* Status */}
           <span className={`self-start text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide ${STATUS_BADGE[task.status]}`}>
             {STATUS_LABEL[task.status]}
           </span>
@@ -91,7 +93,7 @@ export default function TaskCard({ task, role, adminUser, users = [], onUpdate, 
             )}
           </div>
 
-          {/* ── USER: Update Progress button ── */}
+          {/* USER actions */}
           {isUser && (
             <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
               <button
@@ -109,7 +111,7 @@ export default function TaskCard({ task, role, adminUser, users = [], onUpdate, 
             </div>
           )}
 
-          {/* ── ADMIN: Edit / Delete / Verify ── */}
+          {/* ADMIN actions */}
           {isAdmin && (
             <div className="pt-2 border-t border-gray-100 dark:border-gray-700 space-y-2">
               {task.status === "completed" && (
@@ -145,15 +147,28 @@ export default function TaskCard({ task, role, adminUser, users = [], onUpdate, 
         </div>
       </div>
 
-      {/* Admin edit modal */}
-      {adminUser && (
-        <TaskFormModal isOpen={editOpen} onClose={() => setEditOpen(false)}
+      {/* Admin Edit Modal */}
+      {isAdmin && adminUser && (
+        <TaskFormModal
+          isOpen={editOpen}
+          onClose={() => setEditOpen(false)}
           onSubmit={async (t) => { await onUpdate(task.id!, t); }}
-          adminUser={adminUser} editTask={task} users={users} />
+          adminUser={adminUser}
+          editTask={task}
+          users={users}
+        />
       )}
 
-      {/* User update modal */}
-      <UserTaskModal isOpen={userEditOpen} onClose={() => setUserEditOpen(false)} task={task} onUpdate={onUpdate} />
+      {/* User Update Modal */}
+      {isUser && (
+        <UserTaskModal
+          isOpen={userEditOpen}
+          onClose={() => setUserEditOpen(false)}
+          task={task}
+          users={users}
+          onUpdate={onUpdate}
+        />
+      )}
     </>
   );
 }
