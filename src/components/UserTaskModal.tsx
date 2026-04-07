@@ -6,7 +6,7 @@ import type { Task } from "../types/tasks";
 import type { UserData } from "../types/auth";
 import {
   X, ChevronDown, Calendar, StickyNote, ListTodo,
-  User, Flag, AlertCircle, Clock,
+  Flag, AlertCircle, Clock,
 } from "lucide-react";
 
 interface Props {
