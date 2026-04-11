@@ -1,3 +1,8 @@
+/**
+ * userService.ts
+ * Firebase Firestore CRUD operations for users.
+ * Admin-only operations. Used via useUsers hook.
+ */
 import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import type { UserData } from "../types/auth";

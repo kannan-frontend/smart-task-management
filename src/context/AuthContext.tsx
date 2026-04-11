@@ -1,3 +1,9 @@
+/**
+ * AuthContext.tsx
+ * Global authentication state and Firebase Auth operations.
+ * Wrap app root with <AuthProvider>.
+ * Consume via useAuth() hook — never use useContext(AuthContext) directly.
+ */
 import { createContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";

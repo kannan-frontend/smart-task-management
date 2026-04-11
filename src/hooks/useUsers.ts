@@ -1,3 +1,9 @@
+/**
+ * useUsers.ts
+ * Manages user list for admin operations.
+ * Fetches all users from Firestore on mount.
+ * Provides updateRole and deleteUser with auto-refresh.
+ */
 import { useEffect, useState, useCallback } from "react";
 import { userService } from "../services/userService";
 import type { UserData } from "../types/auth";

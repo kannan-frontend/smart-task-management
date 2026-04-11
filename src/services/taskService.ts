@@ -1,3 +1,9 @@
+/**
+ * taskService.ts
+ * Firebase Firestore CRUD operations for tasks.
+ * All methods are async and return typed results.
+ * Used exclusively via useTasks hook — never call directly from components.
+ */
 import {
   collection,
   addDoc,
@@ -28,7 +34,6 @@ export const taskService = {
   /** Create a new task (Admin only) */
   async create(task: Omit<Task, "id">): Promise<string> {
     const payload = sanitize(task as unknown as Record<string, unknown>);
-    console.log("Creating task with payload:", payload); // debug
     const docRef = await addDoc(taskRef, payload);
     return docRef.id;
   },

@@ -3,8 +3,13 @@ import { useAuth } from "../hooks/useAuth";
 import ProfileDropdown from "./ProfileDropdown";
 import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "../pages/ConfirmModal";
+import { Menu } from "lucide-react";
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -19,8 +24,20 @@ export default function Header() {
 
   return (
     <>
-      <header className="flex justify-between items-center px-6 py-4 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shadow-sm">
-        <div />
+      <header className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shadow-sm">
+        {/* Hamburger — visible on mobile only */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          aria-label="Toggle sidebar"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Desktop spacer */}
+        <div className="hidden lg:block" />
+
+        {/* Profile dropdown */}
         <ProfileDropdown
           name={user.displayName || ""}
           email={user.email || ""}

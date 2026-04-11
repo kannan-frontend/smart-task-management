@@ -1,3 +1,10 @@
+/**
+ * useTasks.ts
+ * Manages task data with role-based CRUD operations.
+ * - Admin: fetches all tasks, can create/update/delete
+ * - User: fetches only assigned tasks, can update status/dates/remarks
+ * Re-fetches from Firestore after every mutation.
+ */
 import { useEffect, useState, useCallback } from "react";
 import { taskService } from "../services/taskService";
 import type { Task } from "../types/tasks";
